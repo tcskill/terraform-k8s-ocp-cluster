@@ -1,64 +1,93 @@
 output "id" {
-  value       = "123"
+  value       = var.server_url
   description = "ID of the cluster."
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "name" {
-  value       = var.cluster_name
+  value       = local.cluster_name
   description = "Name of the cluster."
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "resource_group_name" {
   value       = var.resource_group_name
   description = "Name of the resource group containing the cluster."
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "region" {
   value       = var.cluster_region
   description = "Region containing the cluster."
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "ingress_hostname" {
-  value       = var.ingress_subdomain
+  value       = ""
   description = "Ingress hostname of the cluster."
-  depends_on = [null_resource.oc_login]
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "server_url" {
   value       = var.server_url
   description = "The url of the control server."
-  depends_on = [null_resource.oc_login]
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "config_file_path" {
-  value       = local.config_file_path
+  value       = "${local.cluster_config_dir}/config"
   description = "Path to the config file for the cluster."
-  depends_on  = [null_resource.ibmcloud_apikey_release]
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "type" {
-  value       = "openshift"
-  description = "The type of cluster (openshift or ocp3 or ocp4 or kubernetes)"
-  depends_on  = [null_resource.ibmcloud_apikey_release]
+  value       = local.cluster_type
+  description = "(Deprecated, use platform.type) The type of cluster (openshift or ocp4 or ocp3 or kubernetes)"
+  depends_on  = [helm_release.ibmcloud_config]
+}
+
+output "type_code" {
+  value       = local.cluster_type_code
+  description = "(Deprecated, use platform.type_code) The type of cluster (openshift or ocp4 or ocp3 or kubernetes)"
+  depends_on  = [helm_release.ibmcloud_config]
+}
+
+output "platform" {
+  value       = {
+    type      = local.cluster_type
+    type_code = local.cluster_type_code
+    version   = ""
+  }
+  description = "Configuration values for the cluster platform"
+  depends_on  = [helm_release.ibmcloud_config]
+}
+
+output "version" {
+  value       = ""
+  description = "(Deprecated, use platform.version) The point release version number of cluster (3.11 or 4.3 or 1.16)"
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "login_user" {
   value       = var.login_user
   description = "The username used to log into the openshift cli"
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "login_password" {
-  value       = var.ibmcloud_api_key
+  value       = var.login_password
   description = "The password used to log into the openshift cli"
-}
-
-output "ibmcloud_api_key" {
-  value       = var.ibmcloud_api_key
-  depends_on  = [null_resource.ibmcloud_apikey_release]
-  description = "The API key for the environment"
+  depends_on  = [helm_release.ibmcloud_config]
 }
 
 output "tls_secret_name" {
-  value       = var.tls_secret_name
-  description = "The name of the secret containing the tls information for the cluster"
+  value       = ""
+  description = "The name of the secret containin the tls information for the cluster"
+  depends_on  = [helm_release.ibmcloud_config]
+}
+
+output "tag" {
+  value       = local.cluster_type_tag
+  description = "The tag vased on the cluster type"
+  depends_on  = [helm_release.ibmcloud_config]
 }
