@@ -1,3 +1,6 @@
-source: github.com/ibm-garage-cloud/terraform-k8s-ocp-cluster
+name: ocp-cluster
+description: Connects to an existing OpenShift cluster
 platforms:
   - ocp4
+tags:
+  - cluster
