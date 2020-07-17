@@ -53,10 +53,13 @@ output "type_code" {
 }
 
 output "platform" {
-  value       = {
-    type      = local.cluster_type
-    type_code = local.cluster_type_code
-    version   = ""
+  value = {
+    kubeconfig = "${local.cluster_config_dir}/config"
+    type       = local.cluster_type
+    type_code  = local.cluster_type_code
+    version    = ""
+    ingress    = ""
+    tls_secret = ""
   }
   description = "Configuration values for the cluster platform"
   depends_on  = [helm_release.ibmcloud_config]
