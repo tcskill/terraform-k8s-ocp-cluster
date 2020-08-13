@@ -42,3 +42,9 @@ variable "ingress_subdomain" {
   description = "The ROUTER_CANONICAL_HOSTNAME for the cluster"
   default     = ""
 }
+
+variable "gitops_dir" {
+  type        = string
+  description = "Directory where the gitops repo content should be written"
+  default     = ""
+}

@@ -2,7 +2,7 @@ provider "helm" {
   version = ">= 1.1.1"
 
   kubernetes {
-    config_path = local.config_file_path
+    config_path = local.cluster_config
   }
 }
 
@@ -11,7 +11,7 @@ provider "null" {
 
 locals {
   cluster_config_dir    = pathexpand("~/.kube")
-  config_file_path      = "${local.cluster_config_dir}/config"
+  cluster_config        = "${local.cluster_config_dir}/config"
   config_namespace      = "default"
   ibmcloud_apikey_chart = "${path.module}/charts/ibmcloud"
   cluster_name          = "crc"
@@ -26,6 +26,54 @@ locals {
   cluster_type_tag      = local.cluster_type == "kubernetes" ? "iks" : "ocp"
   ingress_subdomain     = var.ingress_subdomain != "" ? var.ingress_subdomain : data.local_file.ingress_subdomain.content
   ingress_subdomain_file = "${local.tmp_dir}/ingress_subdomain.val"
+  console_host_file      = "${local.tmp_dir}/console.host"
+  console_url  = "https://${data.local_file.console_host.content}"
+  gitops_dir   = var.gitops_dir != "" ? var.gitops_dir : "${path.cwd}/gitops"
+  chart_name   = "cloud-setup"
+  chart_dir    = "${local.gitops_dir}/${local.chart_name}"
+  global_config = {
+    clusterType = local.cluster_type_code
+    ingressSubdomain = local.ingress_subdomain
+  }
+  ibmcloud_config = {
+    server_url = var.server_url
+    cluster_type = local.cluster_type
+    ingress_subdomain = local.ingress_subdomain
+  }
+  github_config = {
+    name = "github"
+    displayName = "GitHub"
+    url = "https://github.com"
+    applicationMenu = true
+  }
+  imageregistry_config = {
+    name = "registry"
+    displayName = "Image Registry"
+    url = "${local.console_url}/k8s/ns/all-projects/imagestreams"
+    privateUrl = local.registry_url
+    otherSecrets = {
+      namespace = var.registry_namespace
+    }
+    username = var.login_user
+    password = var.login_password
+    applicationMenu = true
+  }
+  cntk_dev_guide_config = {
+    name = "cntk-dev-guide"
+    displayName = "Cloud-Native Toolkit"
+    url = "https://cloudnativetoolkit.dev"
+  }
+  first_app_config = {
+    name = "first-app"
+    displayName = "Deploy first app"
+    url = "https://cloudnativetoolkit.dev/getting-started/deploy-app"
+  }
+}
+
+resource "null_resource" "create_dirs" {
+  provisioner "local-exec" {
+    command = "mkdir -p ${local.tmp_dir}"
+  }
 }
 
 resource "null_resource" "oc_login" {
@@ -40,27 +88,15 @@ resource "null_resource" "oc_login" {
   }
 }
 
-resource "null_resource" "delete_ibmcloud_chart" {
-  depends_on = [null_resource.oc_login]
-
-  provisioner "local-exec" {
-    command = "${path.module}/scripts/helm3-uninstall.sh ${local.ibmcloud_release_name} ${local.config_namespace}"
-
-    environment = {
-      KUBECONFIG = local.config_file_path
-    }
-  }
-}
-
 resource "null_resource" "get_ingress_subdomain" {
-  depends_on = [null_resource.oc_login]
+  depends_on = [null_resource.oc_login, null_resource.create_dirs]
   count = var.ingress_subdomain == "" ? 1 : 0
 
   provisioner "local-exec" {
     command = "${path.module}/scripts/get-ingress-subdomain.sh ${local.ingress_subdomain_file}"
 
     environment = {
-      KUBECONFIG = local.config_file_path
+      KUBECONFIG = local.cluster_config
     }
   }
 }
@@ -71,57 +107,165 @@ data "local_file" "ingress_subdomain" {
   filename = local.ingress_subdomain_file
 }
 
-resource "helm_release" "ibmcloud_config" {
+resource "null_resource" "get_console_host" {
+  depends_on = [null_resource.oc_login, null_resource.create_dirs]
+
+  provisioner "local-exec" {
+    command = "kubectl get -n openshift-console route/console -o jsonpath='{.spec.host}' > ${local.console_host_file}"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
+  }
+}
+
+data "local_file" "console_host" {
+  depends_on = [null_resource.get_console_host]
+
+  filename = local.console_host_file
+}
+
+resource "null_resource" "setup-chart" {
+  depends_on = [null_resource.create_dirs]
+
+  provisioner "local-exec" {
+    command = "mkdir -p ${local.chart_dir} && cp -R ${path.module}/chart/${local.chart_name}/* ${local.chart_dir}"
+  }
+}
+
+resource "null_resource" "delete-helm-cloud-config" {
   depends_on = [null_resource.oc_login]
 
-  name         = local.ibmcloud_release_name
-  chart        = "ibmcloud"
-  repository   = "https://ibm-garage-cloud.github.io/toolkit-charts"
-  version      = "0.1.3"
-  namespace    = local.config_namespace
+  provisioner "local-exec" {
+    command = "kubectl delete secret -n ${local.config_namespace} -l name=${local.ibmcloud_release_name} || exit 0"
 
-  set_sensitive {
-    name  = "apikey"
-    value = "bogus"
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "resource_group"
-    value = var.resource_group_name
+  provisioner "local-exec" {
+    command = "kubectl delete secret -n ${local.config_namespace} -l name=cloud-setup || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "server_url"
-    value = var.server_url
+  provisioner "local-exec" {
+    command = "kubectl delete secret -n ${local.config_namespace} github-access || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "cluster_type"
-    value = local.cluster_type
+  provisioner "local-exec" {
+    command = "kubectl delete configmap -n ${local.config_namespace} github-config || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "cluster_name"
-    value = var.cluster_type
+  provisioner "local-exec" {
+    command = "kubectl delete secret -n ${local.config_namespace} registry-access || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "region"
-    value = var.cluster_region
+  provisioner "local-exec" {
+    command = "kubectl delete configmap -n ${local.config_namespace} registry-config || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "registry_url"
-    value = local.registry_url
+  provisioner "local-exec" {
+    command = "kubectl delete secret -n ${local.config_namespace} ibmcloud-apikey || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "registry_namespace"
-    value = var.registry_namespace
+  provisioner "local-exec" {
+    command = "kubectl delete configmap -n ${local.config_namespace} ibmcloud-config || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
 
-  set {
-    name  = "ingress_subdomain"
-    value = local.ingress_subdomain
+  provisioner "local-exec" {
+    command = "kubectl delete secret -n ${local.config_namespace} cloud-access || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
   }
+
+  provisioner "local-exec" {
+    command = "kubectl delete configmap -n ${local.config_namespace} cloud-config || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
+  }
+
+  provisioner "local-exec" {
+    command = "kubectl delete consolelink toolkit-github || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
+  }
+
+  provisioner "local-exec" {
+    command = "kubectl delete consolelink toolkit-registry || exit 0"
+
+    environment = {
+      KUBECONFIG = local.cluster_config
+    }
+  }
+}
+
+resource "local_file" "cloud-values" {
+  depends_on = [null_resource.setup-chart]
+
+  content  = yamlencode({
+    global = local.global_config
+    cloud-setup = {
+      ibmcloud = local.ibmcloud_config
+      github-config = local.github_config
+      imageregistry-config = local.imageregistry_config
+      cntk-dev-guide = local.cntk_dev_guide_config
+      first-app = local.first_app_config
+    }
+  })
+  filename = "${local.chart_dir}/values.yaml"
+}
+
+resource "null_resource" "print-values" {
+  provisioner "local-exec" {
+    command = "cat ${local_file.cloud-values.filename}"
+  }
+}
+
+resource "helm_release" "cloud_setup" {
+  depends_on = [null_resource.oc_login, null_resource.delete-helm-cloud-config, local_file.cloud-values]
+
+  name              = "cloud-setup"
+  chart             = local.chart_dir
+  version           = "0.1.0"
+  namespace         = local.config_namespace
+  timeout           = 1200
+  dependency_update = true
+  force_update      = true
+  replace           = true
+
+  disable_openapi_validation = true
 }
