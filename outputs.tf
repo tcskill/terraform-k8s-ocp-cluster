@@ -23,7 +23,7 @@ output "region" {
 }
 
 output "ingress_hostname" {
-  value       = ""
+  value       = local.ingress_subdomain
   description = "Ingress hostname of the cluster."
   depends_on  = [helm_release.ibmcloud_config]
 }
