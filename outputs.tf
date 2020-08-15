@@ -84,7 +84,7 @@ output "login_password" {
 }
 
 output "tls_secret_name" {
-  value       = ""
+  value       = "tls_secret"
   description = "The name of the secret containin the tls information for the cluster"
   depends_on  = [helm_release.cloud_setup]
 }
