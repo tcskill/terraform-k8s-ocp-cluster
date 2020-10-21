@@ -7,11 +7,19 @@ variable "cluster_type" {
 variable "login_user" {
   type        = string
   description = "The username to log in to openshift"
+  default     = ""
 }
 
 variable "login_password" {
   type        = string
   description = "The password to log in to openshift"
+  default     = ""
+}
+
+variable "login_token" {
+  type        = string
+  description = "The token to log in to openshift"
+  default     = ""
 }
 
 variable "server_url" {

@@ -84,7 +84,7 @@ resource "null_resource" "oc_login" {
   }
 
   provisioner "local-exec" {
-    command = "oc login --insecure-skip-tls-verify=true -u ${var.login_user} -p ${var.login_password} --server=${var.server_url} > /dev/null"
+    command = "${path.module}/scripts/oc-login.sh \"${var.server_url}\" \"${var.login_user}\" \"${var.login_password}\" \"${var.login_token}\""
   }
 }
 
