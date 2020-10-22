@@ -42,7 +42,7 @@ variable "cluster_region" {
 variable "registry_namespace" {
   type        = string
   description = "The namespace that will be created in the IBM Cloud image registry. If not provided the value will default to the resource group"
-  default     = "default"
+  default     = ""
 }
 
 variable "ingress_subdomain" {
