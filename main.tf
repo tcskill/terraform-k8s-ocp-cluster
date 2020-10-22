@@ -49,7 +49,7 @@ locals {
   imageregistry_config = {
     name = "registry"
     displayName = "Image Registry"
-    url = "${local.console_url}/k8s/ns/all-projects/imagestreams"
+    url = "${local.console_url}/k8s/all-namespaces/imagestreams"
     privateUrl = local.registry_url
     otherSecrets = {
       namespace = var.registry_namespace
@@ -66,7 +66,7 @@ locals {
   first_app_config = {
     name = "first-app"
     displayName = "Deploy first app"
-    url = "https://cloudnativetoolkit.dev/getting-started/deploy-app"
+    url = "https://cloudnativetoolkit.dev/getting-started-day-1/deploy-app"
   }
 }
 
