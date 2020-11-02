@@ -1,6 +1,6 @@
 dependencies:
 - name: cloud-setup
   repository: https://ibm-garage-cloud.github.io/toolkit-charts/
-  version: 0.2.1
-digest: sha256:1aefcb3ffa89186af819c67bfb242066c3584bdf606861fc0f1d7bfdad38eacd
-generated: "2020-08-12T23:46:06.094236-05:00"
+  version: 0.3.0
+digest: sha256:6700f87cd9cf9ee7f484caeae8a40b5cd674c008599f5553fa1d0f4a7fcc5f50
+generated: "2020-10-21T14:06:11.678745-05:00"

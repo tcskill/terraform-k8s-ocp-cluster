@@ -40,24 +40,6 @@ locals {
     cluster_type = local.cluster_type
     ingress_subdomain = local.ingress_subdomain
   }
-  github_config = {
-    name = "github"
-    displayName = "GitHub"
-    url = "https://github.com"
-    applicationMenu = true
-  }
-  imageregistry_config = {
-    name = "registry"
-    displayName = "Image Registry"
-    url = "${local.console_url}/k8s/all-namespaces/imagestreams"
-    privateUrl = local.registry_url
-    otherSecrets = {
-      namespace = var.registry_namespace
-    }
-    username = var.login_user
-    password = var.login_password
-    applicationMenu = true
-  }
   cntk_dev_guide_config = {
     name = "cntk-dev-guide"
     displayName = "Cloud-Native Toolkit"
@@ -153,38 +135,6 @@ resource "null_resource" "delete-helm-cloud-config" {
   }
 
   provisioner "local-exec" {
-    command = "kubectl delete secret -n ${local.config_namespace} github-access || exit 0"
-
-    environment = {
-      KUBECONFIG = local.cluster_config
-    }
-  }
-
-  provisioner "local-exec" {
-    command = "kubectl delete configmap -n ${local.config_namespace} github-config || exit 0"
-
-    environment = {
-      KUBECONFIG = local.cluster_config
-    }
-  }
-
-  provisioner "local-exec" {
-    command = "kubectl delete secret -n ${local.config_namespace} registry-access || exit 0"
-
-    environment = {
-      KUBECONFIG = local.cluster_config
-    }
-  }
-
-  provisioner "local-exec" {
-    command = "kubectl delete configmap -n ${local.config_namespace} registry-config || exit 0"
-
-    environment = {
-      KUBECONFIG = local.cluster_config
-    }
-  }
-
-  provisioner "local-exec" {
     command = "kubectl delete secret -n ${local.config_namespace} ibmcloud-apikey || exit 0"
 
     environment = {
@@ -215,22 +165,6 @@ resource "null_resource" "delete-helm-cloud-config" {
       KUBECONFIG = local.cluster_config
     }
   }
-
-  provisioner "local-exec" {
-    command = "kubectl delete consolelink toolkit-github || exit 0"
-
-    environment = {
-      KUBECONFIG = local.cluster_config
-    }
-  }
-
-  provisioner "local-exec" {
-    command = "kubectl delete consolelink toolkit-registry || exit 0"
-
-    environment = {
-      KUBECONFIG = local.cluster_config
-    }
-  }
 }
 
 resource "local_file" "cloud-values" {
@@ -240,8 +174,6 @@ resource "local_file" "cloud-values" {
     global = local.global_config
     cloud-setup = {
       ibmcloud = local.ibmcloud_config
-      github-config = local.github_config
-      imageregistry-config = local.imageregistry_config
       cntk-dev-guide = local.cntk_dev_guide_config
       first-app = local.first_app_config
     }

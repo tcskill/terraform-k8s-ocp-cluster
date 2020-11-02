@@ -39,12 +39,6 @@ variable "cluster_region" {
   default     = "N/A"
 }
 
-variable "registry_namespace" {
-  type        = string
-  description = "The namespace that will be created in the IBM Cloud image registry. If not provided the value will default to the resource group"
-  default     = ""
-}
-
 variable "ingress_subdomain" {
   type        = string
   description = "The ROUTER_CANONICAL_HOSTNAME for the cluster"
