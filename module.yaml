@@ -1,7 +1,9 @@
 name: ocp-cluster
 description: Connects to an existing OpenShift cluster
+alias: cluster
 tags:
   - cluster
+  - openshift
 versions:
   - platforms:
       - ocp4
