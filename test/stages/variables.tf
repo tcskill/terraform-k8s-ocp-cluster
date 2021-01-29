@@ -4,7 +4,7 @@ variable "login_user" {
   default     = "apikey"
 }
 
-variable "login_password" {
+variable "ibmcloud_api_key" {
   type        = string
   description = "The password to log in to openshift"
 }
