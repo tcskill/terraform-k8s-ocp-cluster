@@ -1,6 +1,27 @@
 name: ocp-cluster
 description: Connects to an existing OpenShift cluster
-platforms:
-  - ocp4
 tags:
   - cluster
+versions:
+  - platforms:
+      - ocp4
+    dependencies: []
+    variables:
+      - name: cluster_type
+        scope: global
+      - name: login_user
+        scope: module
+      - name: login_password
+        scope: module
+      - name: login_token
+        scope: module
+      - name: server_url
+        scope: module
+      - name: resource_group_name
+        scope: ignore
+      - name: cluster_region
+        scope: ignore
+      - name: ingress_subdomain
+        scope: ignore
+      - name: gitops_dir
+        scope: global
