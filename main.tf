@@ -10,6 +10,7 @@ provider "null" {
 }
 
 locals {
+  bin_dir = module.setup_clis.bin_dir
   cluster_config_dir    = pathexpand("~/.kube")
   cluster_config        = "${local.cluster_config_dir}/config"
   config_namespace      = "default"
@@ -52,6 +53,10 @@ locals {
   }
 }
 
+module setup_clis {
+  source = "github.com/cloud-native-toolkit/terraform-util-clis.git"
+}
+
 resource "null_resource" "create_dirs" {
   provisioner "local-exec" {
     command = "mkdir -p ${local.tmp_dir}"
@@ -79,6 +84,7 @@ resource "null_resource" "get_ingress_subdomain" {
 
     environment = {
       KUBECONFIG = local.cluster_config
+      BIN_DIR    = local.bin_dir
     }
   }
 }
